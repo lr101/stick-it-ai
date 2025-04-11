@@ -1,0 +1,23 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload</title>
+</head>
+<body>
+    <h1>Upload an Image</h1>
+    <form action="/predict/" method="post" enctype="multipart/form-data">
+        <label for="file">Choose an image:</label>
+        <input type="file" id="file" name="file" accept="image/*" required>
+        <button type="submit">Upload</button>
+    </form>
+    <br>
+    {% if prediction %}
+    <h2>Prediction Result:</h2>
+    <p>Group ID: {{ prediction.predicted_group_id }}</p>
+    <p>User ID: {{ prediction.predicted_user_id }}</p>
+    {% endif %}
+</body>
+</html>

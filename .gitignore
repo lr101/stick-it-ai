@@ -1,3 +1,6 @@
 annotated_images/**
 venv/** 
 annotated_data.csv
+reid-data/**
+log/**
+reid-data/**
