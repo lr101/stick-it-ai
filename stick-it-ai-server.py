@@ -13,11 +13,11 @@ from functools import partial
 from collections import OrderedDict
 from torchreid.reid.data.transforms import build_transforms
 
+# To start: python -m uvicorn stick-it-ai-server:app --reload
+
 app = FastAPI()
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-
-model_path = 'model/model_1744381991.pth'
+model_path = 'model/model_1744450299.pth'
 
 json_path = model_path.replace('.pth', '.json')
 
@@ -26,16 +26,18 @@ with open(json_path, 'r') as json_file:
     model_data = json.load(json_file)
 
 group_id_to_pid = model_data['group_id_to_pid']
+pid_to_group_id = {v: k for k, v in model_data['group_id_to_pid'].items()}
+pid_to_group_name = model_data['group_name_to_pid']
 
 model = torchreid.models.build_model(
     name="resnet50", 
     num_classes=42,
     pretrained=False,
     loss='softmax',
-    use_gpu=True
+    use_gpu=False
 )
 # Load model state
-model.load_state_dict(torch.load(model_path, map_location=device))
+model.load_state_dict(torch.load(model_path))
 model.eval()
 
 # Load the mappings
@@ -60,40 +62,35 @@ def transform_image(img0):
 
     return img.unsqueeze(0)
 
-def resize_image(image):
-    width = 128
-    height = int(width * 4 / 3)  # Maintain 3:4 horizontal aspect ratio
-    image = ImageOps.exif_transpose(image)  # Correct orientation based on EXIF data
-    return image.resize((width, height))
-
-
 
 from fastapi.staticfiles import StaticFiles
 templates = Jinja2Templates(directory="templates")
 
 # FastAPI endpoint to predict the label of an image
-@app.post("/predict/")
-async def predict(file: UploadFile = File(...)):
+@app.post("/predict")
+async def predict(file: UploadFile = File(...), group_ids: list[str] = None):
     # Read image file
     image_data = await file.read()
     image = Image.open(io.BytesIO(image_data)).convert('RGB')
 
     # Apply transformation to the image
     image = transform_image(image)
+    
+    predicted_group_id = None
  
     with torch.no_grad():
-        features = model(image)  # If this gives you 2048 features
-        output = model.classifier(features)  # This should give 42 outputs
-        _, predicted_pid = torch.max(output, 1)
+        features = model(image)
+        output = model.classifier(features)
+        predicted_pid = torch.topk(output, k=output.size(1), dim=1).indices
+        for pid in predicted_pid[0]:
+            matching_group_id = pid_to_group_id.get(pid.item())
+            if group_ids and matching_group_id in group_ids:
+                predicted_group_id = matching_group_id
+                break
 
-    # Reverse the group_id_to_pid mapping to get the group_id (UUID)
-    pid_to_group_id = {v: k for k, v in group_id_to_pid.items()}
-    predicted_group_id = pid_to_group_id[predicted_pid.item()]
-
+   
     return {
-        "prediction": {
-            "predicted_group_id": predicted_group_id,
-        }
+        "predicted_group_id": predicted_group_id
     }
 
 
@@ -101,5 +98,4 @@ async def predict(file: UploadFile = File(...)):
 @app.get("/")
 async def get_image_upload_form(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
-
 

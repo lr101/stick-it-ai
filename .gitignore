@@ -4,3 +4,5 @@ annotated_data.csv
 reid-data/**
 log/**
 reid-data/**
+__pycache__/
+model/
