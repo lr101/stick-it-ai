@@ -4,17 +4,21 @@ import psycopg2
 from minio import Minio
 from PIL import Image, ImageDraw, ImageFont
 import io
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Database connection parameters
-DB_HOST = '127.0.0.1:5432'
-DB_NAME = 'stickprod'
-DB_USER = 'postgres'
-DB_PASSWORD = 'postgres'
+DB_HOST = os.getenv('DB_HOST', '127.0.0.1:5432')
+DB_NAME = os.getenv('DB_NAME', 'stickprod')
+DB_USER = os.getenv('DB_USER', 'postgres')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
 
 # MinIO connection parameters
-MINIO_URL = 'localhost:9000'
-MINIO_ACCESS_KEY = 'L8GCU3UXGrVdCBYACwTF'
-MINIO_SECRET_KEY = 'B901pfCvAmQwSR90jmyh5qiAHlxdWsw2zXL4mJnX'
+MINIO_URL = os.getenv('MINIO_URL', 'localhost:9000')
+MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY')
+MINIO_SECRET_KEY = os.getenv('MINIO_SECRET_KEY')
 
 # Output CSV file
 OUTPUT_CSV = 'annotated_data.csv'
