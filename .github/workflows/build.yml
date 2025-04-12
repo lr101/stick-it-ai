@@ -29,7 +29,6 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          flavor: latest
           images: ghcr.io/${{ github.repository }}/stick-it-ai
 
       - name: Build and push Docker image
